@@ -46,7 +46,12 @@ function App() {
           <li key={idx}>{item}</li>
         ))}
       </ul>
-      <button onClick={sendItemsToBackend} style={{ marginTop: 16 }}>Send List to Backend</button>
+      <button 
+        onClick={sendItemsToBackend} 
+        style={{ marginTop: 16, backgroundColor: 'red', color: 'black', border: 'none', padding: '10px 20px', fontWeight: 'bold', borderRadius: 4 }}
+      >
+        Send List to Backend
+      </button>
     </div>
   );
 }
