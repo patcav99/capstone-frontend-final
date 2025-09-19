@@ -6,6 +6,23 @@ function App() {
   const [input, setInput] = useState("");
   const [items, setItems] = useState([]);
 
+  // Function to send items to backend
+  const sendItemsToBackend = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/add-items/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ items }),
+      });
+      const data = await response.json();
+      alert("Items sent! Response: " + JSON.stringify(data));
+    } catch (error) {
+      alert("Error sending items: " + error);
+    }
+  };
+
   const handleAdd = () => {
     if (input.trim() !== "") {
       setItems([...items, input]);
@@ -29,6 +46,7 @@ function App() {
           <li key={idx}>{item}</li>
         ))}
       </ul>
+      <button onClick={sendItemsToBackend} style={{ marginTop: 16 }}>Send List to Backend</button>
     </div>
   );
 }
