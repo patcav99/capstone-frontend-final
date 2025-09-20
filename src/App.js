@@ -9,7 +9,7 @@ function App() {
   // Function to send items to backend
   const sendItemsToBackend = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/add-items/", {
+      const response = await fetch("http://patcav.shop/api/account/receive-list/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
