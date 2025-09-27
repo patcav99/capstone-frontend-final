@@ -1,59 +1,71 @@
-
-import React, { useState } from "react";
 import "./App.css";
+import SubscriptionList from "./SubscriptionList";
+import React, { useEffect, useState } from "react";
+export default App;
 
 function App() {
-  const [input, setInput] = useState("");
-  const [items, setItems] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [newSub, setNewSub] = useState("");
+  const [adding, setAdding] = useState(false);
 
-  // Function to send items to backend
-  const sendItemsToBackend = async () => {
+  useEffect(() => {
+    fetchSubscriptions();
+  }, []);
+
+  async function fetchSubscriptions() {
+    setLoading(true);
     try {
-      const response = await fetch("http://patcav.shop/api/account/receive-list/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ items }),
-      });
-      const data = await response.json();
-      alert("Items sent! Response: " + JSON.stringify(data));
-    } catch (error) {
-      alert("Error sending items: " + error);
+      const res = await fetch("http://patcav.shop/api/account/subscriptions/");
+      if (!res.ok) throw new Error("Failed to fetch subscriptions");
+      const data = await res.json();
+      setSubscriptions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  const handleAdd = () => {
-    if (input.trim() !== "") {
-      setItems([...items, input]);
-      setInput("");
+  async function addSubscription() {
+    if (!newSub.trim()) return;
+    setAdding(true);
+    try {
+      const res = await fetch("http://patcav.shop/api/account/receive-list/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [newSub.trim()] })
+      });
+      if (!res.ok) throw new Error("Failed to add subscription");
+      setNewSub("");
+      await fetchSubscriptions();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAdding(false);
     }
-  };
+  }
+
+  if (loading) return <div className="App" style={{ marginTop: 40 }}>Loading subscriptions...</div>;
+  if (error) return <div className="App" style={{ marginTop: 40 }}>Error: {error}</div>;
 
   return (
     <div className="App" style={{ marginTop: 40 }}>
-      <h2>Add Items to the List</h2>
-      <input
-        type="text"
-        value={input}
-        onChange={e => setInput(e.target.value)}
-        placeholder="Enter item"
-        style={{ marginRight: 8 }}
-      />
-      <button onClick={handleAdd}>Add</button>
-      <ul style={{ marginTop: 20 }}>
-        {items.map((item, idx) => (
-          <li key={idx}>{item}</li>
-        ))}
-      </ul>
-      <button 
-        onClick={sendItemsToBackend} 
-        style={{ marginTop: 16, backgroundColor: 'red', color: 'black', border: 'none', padding: '10px 20px', fontWeight: 'bold', borderRadius: 4 }}
-      >
-        Send List to Backend
-      </button>
+      <div style={{ marginBottom: 24 }}>
+        <input
+          type="text"
+          value={newSub}
+          onChange={e => setNewSub(e.target.value)}
+          placeholder="Add a subscription"
+          style={{ marginRight: 8 }}
+        />
+        <button onClick={addSubscription} disabled={adding || !newSub.trim()}>
+          {adding ? "Adding..." : "Add Subscription"}
+        </button>
+      </div>
+      <SubscriptionList subscriptions={subscriptions} />
     </div>
   );
 }
 
-export default App;
