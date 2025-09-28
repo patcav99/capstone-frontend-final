@@ -27,7 +27,7 @@ afterEach(() => {
   window.confirm.mockClear();
 });
 
-// Test: prompts for sign in credentials
+// TestID 7: prompts for sign in credentials
 it('prompts the user to enter sign in credentials when a subscription is clicked', async () => {
   render(<App />);
   await waitFor(() => expect(screen.getByText('Netflix')).toBeInTheDocument());
@@ -38,7 +38,7 @@ it('prompts the user to enter sign in credentials when a subscription is clicked
   });
 });
 
-// Test: removes subscription from UI list when user clicks delete
+// TestID 10: removes subscription from UI list when user clicks delete
 it('removes subscription from UI list when user clicks delete', async () => {
   render(<App />);
   await waitFor(() => expect(screen.getByText('DeleteMe')).toBeInTheDocument());
@@ -47,7 +47,7 @@ it('removes subscription from UI list when user clicks delete', async () => {
   await waitFor(() => expect(screen.queryByText('DeleteMe')).not.toBeInTheDocument());
 });
 
-// Test: displays all subscriptions at startup
+// TestID 5: displays all subscriptions at startup
 it('displays all subscriptions from the database in the UI at startup', async () => {
   render(<App />);
   await waitFor(() => {
@@ -57,7 +57,7 @@ it('displays all subscriptions from the database in the UI at startup', async ()
   });
 });
 
-// Test: SubscriptionList renders all subscriptions
+// TestID 3: SubscriptionList renders all subscriptions
 it('renders all subscriptions in the list', () => {
   const subscriptions = [
     { id: 1, name: 'Netflix' },
@@ -70,7 +70,7 @@ it('renders all subscriptions in the list', () => {
   });
 });
 
-// Test: shows a new subscription in the UI list
+// TestID 4: shows a new subscription in the UI list
 it('shows a new subscription in the UI list', () => {
   const subscriptions = [
     { id: 1, name: 'Netflix' },
