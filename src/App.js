@@ -64,7 +64,7 @@ function App() {
           {adding ? "Adding..." : "Add Subscription"}
         </button>
       </div>
-      <SubscriptionList subscriptions={subscriptions} />
+  <SubscriptionList subscriptions={subscriptions} setSubscriptions={setSubscriptions} />
     </div>
   );
 }

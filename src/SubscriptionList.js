@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import LoginModal from './LoginModal';
 
-function SubscriptionList({ subscriptions }) {
+function SubscriptionList({ subscriptions, setSubscriptions }) {
   const [showLogin, setShowLogin] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
@@ -66,10 +66,7 @@ function SubscriptionList({ subscriptions }) {
                     credentials: 'include',
                   });
                   if (res.ok) {
-                    // Remove from local list
-                    if (typeof window !== 'undefined') {
-                      window.location.reload(); // simplest way to refresh list
-                    }
+                    setSubscriptions(subs => subs.filter(s => s.id !== sub.id));
                   } else {
                     alert('Failed to delete subscription.');
                   }
