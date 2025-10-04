@@ -1,5 +1,6 @@
 import "./App.css";
 import SubscriptionList from "./SubscriptionList";
+import BankLink from "./BankLink";
 import React, { useEffect, useState } from "react";
 export default App;
 
@@ -64,7 +65,10 @@ function App() {
           {adding ? "Adding..." : "Add Subscription"}
         </button>
       </div>
-  <SubscriptionList subscriptions={subscriptions} setSubscriptions={setSubscriptions} />
+      <div style={{ marginBottom: 24 }}>
+        <BankLink setSubscriptions={setSubscriptions} />
+      </div>
+      <SubscriptionList subscriptions={subscriptions} setSubscriptions={setSubscriptions} />
     </div>
   );
 }
