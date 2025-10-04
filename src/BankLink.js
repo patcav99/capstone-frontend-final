@@ -114,7 +114,6 @@ function BankLink({ setSubscriptions }) {
             const existingNames = new Set(subs.map(s => s.name));
             const filteredSubs = newSubs.filter(s => !existingNames.has(s.name));
             if (filteredSubs.length > 0) {
-              // Send all fields to backend if needed, or just names
               // Send all fields to backend (not just names)
               console.log('POSTing new merchant subscriptions to backend (full payload):', filteredSubs);
               fetch('http://patcav.shop/api/account/receive-list/', {
@@ -123,7 +122,18 @@ function BankLink({ setSubscriptions }) {
                 body: JSON.stringify({ items: filteredSubs })
               })
                 .then(res => res.json())
+                .then(data => {
+                  // Use backend's returned subscriptions with correct numeric IDs
+                  if (data && data.data && data.data.saved_items) {
+                    setSubscriptions(current => [
+                      ...current,
+                      ...data.data.saved_items.filter(s => !current.some(c => c.id === s.id))
+                    ]);
+                  }
+                })
                 .catch(() => {});
+              // Don't add filteredSubs directly, wait for backend response
+              return subs;
             }
             return [...subs, ...filteredSubs];
           });

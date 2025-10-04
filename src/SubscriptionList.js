@@ -6,6 +6,8 @@ function SubscriptionList({ subscriptions, setSubscriptions }) {
   const [selectedSub, setSelectedSub] = useState(null);
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [seleniumResult, setSeleniumResult] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState({}); // Track which dropdowns are open
+  const [detailsCache, setDetailsCache] = useState({}); // Cache details by sub.id
 
   // When a subscription is clicked, prompt for email/password
   const handleSubscriptionClick = (sub) => {
@@ -52,32 +54,83 @@ function SubscriptionList({ subscriptions, setSubscriptions }) {
     <div>
       <h2>Subscriptions</h2>
       {subscriptions.map(sub => (
-        <div key={sub.id} style={{ display: 'flex', alignItems: 'center', margin: '8px 0', padding: '8px', border: '1px solid #ccc', borderRadius: 4 }}>
-          <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => handleSubscriptionClick(sub)}>{sub.name}</span>
-          <button
-            style={{ marginLeft: 12, padding: '4px 12px', background: '#d32f2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (window.confirm(`Are you sure you want to delete ${sub.name}?`)) {
-                try {
-                  const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/delete/`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                  });
-                  if (res.ok) {
-                    setSubscriptions(subs => subs.filter(s => s.id !== sub.id));
-                  } else {
-                    alert('Failed to delete subscription.');
+        <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc', borderRadius: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => handleSubscriptionClick(sub)}>{sub.name}</span>
+            <button
+              style={{ marginLeft: 8, padding: '4px 12px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+              onClick={async () => {
+                setOpenDropdown(prev => ({ ...prev, [sub.id]: !prev[sub.id] }));
+                // Only fetch if opening and not already cached
+                if (!openDropdown[sub.id] && !detailsCache[sub.id]) {
+                  try {
+                    const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/`, {
+                      method: 'GET',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setDetailsCache(cache => ({ ...cache, [sub.id]: data }));
+                    }
+                  } catch (err) {
+                    // Optionally handle error
                   }
-                } catch (err) {
-                  alert('Network error while deleting subscription.');
                 }
-              }
-            }}
-          >
-            Delete
-          </button>
+              }}
+            >
+              {openDropdown[sub.id] ? 'Hide Details' : 'Show Details'}
+            </button>
+            <button
+              style={{ marginLeft: 8, padding: '4px 12px', background: '#d32f2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (window.confirm(`Are you sure you want to delete ${sub.name}?`)) {
+                  try {
+                    const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/delete/`, {
+                      method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                    });
+                    if (res.ok) {
+                      setSubscriptions(subs => subs.filter(s => s.id !== sub.id));
+                    } else {
+                      alert('Failed to delete subscription.');
+                    }
+                  } catch (err) {
+                    alert('Network error while deleting subscription.');
+                  }
+                }
+              }}
+            >
+              Delete
+            </button>
+          </div>
+          {openDropdown[sub.id] && (
+            <div style={{ marginTop: 8, background: '#f9f9f9', padding: 10, borderRadius: 4, border: '1px solid #eee' }}>
+              {/* Display all available details for the subscription from detailsCache */}
+              {detailsCache[sub.id] ? (
+                <>
+                  {detailsCache[sub.id].description && <div><b>Description:</b> {detailsCache[sub.id].description}</div>}
+                  {detailsCache[sub.id].first_date && <div><b>First Date:</b> {detailsCache[sub.id].first_date}</div>}
+                  {detailsCache[sub.id].last_date && <div><b>Last Date:</b> {detailsCache[sub.id].last_date}</div>}
+                  {detailsCache[sub.id].frequency && <div><b>Frequency:</b> {detailsCache[sub.id].frequency}</div>}
+                  {detailsCache[sub.id].average_amount && <div><b>Average Amount:</b> {detailsCache[sub.id].average_amount}</div>}
+                  {detailsCache[sub.id].last_amount && <div><b>Last Amount:</b> {detailsCache[sub.id].last_amount}</div>}
+                  {detailsCache[sub.id].is_active !== undefined && <div><b>Is Active:</b> {detailsCache[sub.id].is_active ? 'Yes' : 'No'}</div>}
+                  {detailsCache[sub.id].predicted_next_date && <div><b>Predicted Next Date:</b> {detailsCache[sub.id].predicted_next_date}</div>}
+                  {detailsCache[sub.id].last_user_modified_time && <div><b>Last User Modified Time:</b> {detailsCache[sub.id].last_user_modified_time}</div>}
+                  {detailsCache[sub.id].status && <div><b>Status:</b> {detailsCache[sub.id].status}</div>}
+                  {/* If no details, show a message */}
+                  {!detailsCache[sub.id].description && !detailsCache[sub.id].first_date && !detailsCache[sub.id].last_date && !detailsCache[sub.id].frequency && !detailsCache[sub.id].average_amount && !detailsCache[sub.id].last_amount && detailsCache[sub.id].is_active === undefined && !detailsCache[sub.id].predicted_next_date && !detailsCache[sub.id].last_user_modified_time && !detailsCache[sub.id].status && (
+                    <div>No details available.</div>
+                  )}
+                </>
+              ) : (
+                <div>Loading details...</div>
+              )}
+            </div>
+          )}
         </div>
       ))}
       {showLogin && selectedSub && (
