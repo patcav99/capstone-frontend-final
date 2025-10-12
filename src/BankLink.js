@@ -11,6 +11,7 @@ function BankLink({ setSubscriptions }) {
   const [balances, setBalances] = React.useState(null);
   const [transactions, setTransactions] = React.useState(null);
   const [recurring, setRecurring] = React.useState(null);
+  const [useMockRecurring, setUseMockRecurring] = React.useState(false);
   const fetchTransactions = () => {
     if (!accessToken) return;
     setStatus('Fetching transactions...');
@@ -81,7 +82,10 @@ function BankLink({ setSubscriptions }) {
   const fetchRecurring = () => {
     if (!accessToken) return;
     setStatus('Fetching recurring transactions...');
-    fetch('http://patcav.shop/api/account/get_recurring_transactions/', {
+    const url = useMockRecurring
+      ? 'http://patcav.shop/api/account/get_recurring_transactions/?mock=1'
+      : 'http://patcav.shop/api/account/get_recurring_transactions/';
+    fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ access_token: accessToken }),
@@ -90,9 +94,7 @@ function BankLink({ setSubscriptions }) {
       .then(data => {
         setRecurring(data);
         setStatus('Fetched recurring transactions!');
-        // Extract merchant names from outflow_streams and add as subscriptions
         if (data && data.outflow_streams) {
-          // Extract all required fields from outflow_streams
           const newSubs = data.outflow_streams
             .filter(stream => stream.merchant_name)
             .map((stream, idx) => ({
@@ -109,34 +111,25 @@ function BankLink({ setSubscriptions }) {
               last_user_modified_time: stream.last_user_modified_datetime,
               status: stream.status
             }));
-          setSubscriptions(subs => {
-            // Avoid duplicates by merchant name
-            const existingNames = new Set(subs.map(s => s.name));
-            const filteredSubs = newSubs.filter(s => !existingNames.has(s.name));
-            if (filteredSubs.length > 0) {
-              // Send all fields to backend (not just names)
-              console.log('POSTing new merchant subscriptions to backend (full payload):', filteredSubs);
-              fetch('http://patcav.shop/api/account/receive-list/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items: filteredSubs })
+          // Always send new subscriptions to backend to save website_url
+          if (newSubs.length > 0) {
+            console.log('POSTing new merchant subscriptions to backend (full payload):', newSubs);
+            fetch('http://patcav.shop/api/account/receive-list/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ items: newSubs })
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data && data.data && data.data.saved_items) {
+                  setSubscriptions(current => [
+                    ...current,
+                    ...data.data.saved_items.filter(s => !current.some(c => c.id === s.id))
+                  ]);
+                }
               })
-                .then(res => res.json())
-                .then(data => {
-                  // Use backend's returned subscriptions with correct numeric IDs
-                  if (data && data.data && data.data.saved_items) {
-                    setSubscriptions(current => [
-                      ...current,
-                      ...data.data.saved_items.filter(s => !current.some(c => c.id === s.id))
-                    ]);
-                  }
-                })
-                .catch(() => {});
-              // Don't add filteredSubs directly, wait for backend response
-              return subs;
-            }
-            return [...subs, ...filteredSubs];
-          });
+              .catch(() => {});
+          }
         }
       })
       .catch(() => setStatus('Failed to fetch recurring transactions'));
@@ -160,9 +153,14 @@ function BankLink({ setSubscriptions }) {
         </pre>
       )}
       {accessToken && (
-        <button onClick={fetchRecurring} style={{ marginLeft: 8 }}>
-          Fetch Recurring Transactions
-        </button>
+        <>
+          <button onClick={() => setUseMockRecurring(v => !v)} style={{ marginLeft: 8 }}>
+            {useMockRecurring ? 'Use Plaid Recurring' : 'Use Mock Recurring'}
+          </button>
+          <button onClick={fetchRecurring} style={{ marginLeft: 8 }}>
+            Fetch Recurring Transactions
+          </button>
+        </>
       )}
       {recurring && (
         <pre style={{ textAlign: 'left', background: '#fffbe8', padding: 10, marginTop: 10 }}>

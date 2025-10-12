@@ -1,41 +1,11 @@
 import React, { useState } from 'react';
-import LoginModal from './LoginModal';
 
 function SubscriptionList({ subscriptions, setSubscriptions }) {
-  const [showLogin, setShowLogin] = useState(false);
-  const [selectedSub, setSelectedSub] = useState(null);
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
-  const [seleniumResult, setSeleniumResult] = useState(null);
   const [openDropdown, setOpenDropdown] = useState({}); // Track which dropdowns are open
   const [detailsCache, setDetailsCache] = useState({}); // Cache details by sub.id
 
-  // When a subscription is clicked, prompt for email/password
-  const handleSubscriptionClick = (sub) => {
-    setSelectedSub(sub);
-    setShowLogin(true);
-    setSeleniumResult(null);
-  };
 
-  // Handle Selenium login
-  const handleSeleniumLogin = async (email, password) => {
-    setShowLogin(false);
-    if (!selectedSub) return;
-    try {
-      const res = await fetch('http://patcav.shop/api/account/subscription-selenium-login/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscription_name: selectedSub.name,
-          email,
-          password
-        })
-      });
-      const data = await res.json();
-      setSeleniumResult(data);
-    } catch (err) {
-      setSeleniumResult({ success: false, message: 'Network error' });
-    }
-  };
 
   // Helper: Get login URL for subscription
   // Generalized: get login URL for any subscription
@@ -56,7 +26,7 @@ function SubscriptionList({ subscriptions, setSubscriptions }) {
       {subscriptions.map(sub => (
         <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc', borderRadius: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => handleSubscriptionClick(sub)}>{sub.name}</span>
+            <span style={{ flex: 1 }}>{sub.name}</span>
             <button
               style={{ marginLeft: 8, padding: '4px 12px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
               onClick={async () => {
@@ -71,6 +41,7 @@ function SubscriptionList({ subscriptions, setSubscriptions }) {
                     });
                     if (res.ok) {
                       const data = await res.json();
+                      console.log('Fetched subscription details:', data); // Debug print
                       setDetailsCache(cache => ({ ...cache, [sub.id]: data }));
                     }
                   } catch (err) {
@@ -121,6 +92,11 @@ function SubscriptionList({ subscriptions, setSubscriptions }) {
                   {detailsCache[sub.id].predicted_next_date && <div><b>Predicted Next Date:</b> {detailsCache[sub.id].predicted_next_date}</div>}
                   {detailsCache[sub.id].last_user_modified_time && <div><b>Last User Modified Time:</b> {detailsCache[sub.id].last_user_modified_time}</div>}
                   {detailsCache[sub.id].status && <div><b>Status:</b> {detailsCache[sub.id].status}</div>}
+                  {detailsCache[sub.id].website_url && (
+                    <div>
+                      <b>Website:</b> <a href={detailsCache[sub.id].website_url} target="_blank" rel="noopener noreferrer">{detailsCache[sub.id].website_url}</a>
+                    </div>
+                  )}
                   {/* If no details, show a message */}
                   {!detailsCache[sub.id].description && !detailsCache[sub.id].first_date && !detailsCache[sub.id].last_date && !detailsCache[sub.id].frequency && !detailsCache[sub.id].average_amount && !detailsCache[sub.id].last_amount && detailsCache[sub.id].is_active === undefined && !detailsCache[sub.id].predicted_next_date && !detailsCache[sub.id].last_user_modified_time && !detailsCache[sub.id].status && (
                     <div>No details available.</div>
@@ -133,30 +109,7 @@ function SubscriptionList({ subscriptions, setSubscriptions }) {
           )}
         </div>
       ))}
-      {showLogin && selectedSub && (
-        <LoginModal
-          subscriptionName={selectedSub.name}
-          onSeleniumLogin={handleSeleniumLogin}
-          onClose={() => setShowLogin(false)}
-        />
-      )}
-      {seleniumResult && (
-        <div style={{ marginTop: 24 }}>
-          <h3>Selenium Login Result</h3>
-          <pre>{JSON.stringify(seleniumResult, null, 2)}</pre>
-          {/* If network error, show redirect button for any subscription */}
-          {seleniumResult.message && seleniumResult.message.toLowerCase().includes('network error') && selectedSub && getLoginUrl(selectedSub.name) && (
-            <div style={{ marginTop: 16 }}>
-              <button
-                onClick={() => window.open(getLoginUrl(selectedSub.name), '_blank')}
-                style={{ padding: '8px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4 }}
-              >
-                Go to {selectedSub.name} Sign-In Page
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+
 
     
     </div>

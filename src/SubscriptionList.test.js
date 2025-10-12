@@ -27,16 +27,7 @@ afterEach(() => {
   window.confirm.mockClear();
 });
 
-// TestID 7: prompts for sign in credentials
-it('prompts the user to enter sign in credentials when a subscription is clicked', async () => {
-  render(<App />);
-  await waitFor(() => expect(screen.getByText('Netflix')).toBeInTheDocument());
-  userEvent.click(screen.getByText('Netflix'));
-  await waitFor(() => {
-    const matches = screen.getAllByText(/sign in|login|email|password/i);
-    expect(matches.length).toBeGreaterThan(0);
-  });
-});
+
 
 // TestID 10: removes subscription from UI list when user clicks delete
 it('removes subscription from UI list when user clicks delete', async () => {
