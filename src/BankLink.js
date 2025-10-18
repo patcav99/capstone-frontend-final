@@ -3,22 +3,22 @@ import React from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 
 
-function BankLink({ setSubscriptions }) {
+function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccessToken }) {
   console.log("BankLink component mounted");
   const [linkToken, setLinkToken] = React.useState(null);
   const [status, setStatus] = React.useState('');
-  const [accessToken, setAccessToken] = React.useState(null);
   const [balances, setBalances] = React.useState(null);
   const [transactions, setTransactions] = React.useState(null);
   const [recurring, setRecurring] = React.useState(null);
   const [useMockRecurring, setUseMockRecurring] = React.useState(false);
+  // accessToken is now passed as a prop from App
   const fetchTransactions = () => {
-    if (!accessToken) return;
+    if (!setAccessToken) return;
     setStatus('Fetching transactions...');
     fetch('http://patcav.shop/api/account/get_transactions/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: accessToken }),
+      body: JSON.stringify({ access_token: setAccessToken }),
     })
       .then(res => res.json())
       .then(data => {
@@ -51,7 +51,9 @@ function BankLink({ setSubscriptions }) {
       .then(res => res.json())
       .then(data => {
         setStatus('Bank account linked!');
-        setAccessToken(data.access_token);
+        if (typeof setAccessToken === 'function') {
+          setAccessToken(data.access_token);
+        }
       })
       .catch(() => setStatus('Failed to link account'));
   }, []);
@@ -85,15 +87,16 @@ function BankLink({ setSubscriptions }) {
     const url = useMockRecurring
       ? 'http://patcav.shop/api/account/get_recurring_transactions/?mock=1'
       : 'http://patcav.shop/api/account/get_recurring_transactions/';
-    fetch(url, {
+  fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ access_token: accessToken }),
     })
-      .then(res => res.json())
-      .then(data => {
-        setRecurring(data);
-        setStatus('Fetched recurring transactions!');
+  .then(res => res.json())
+  .then(data => {
+  setRecurring(data);
+  setStatus('Fetched recurring transactions!');
+  if (onRecurringFetched) onRecurringFetched();
         if (data && data.outflow_streams) {
           const newSubs = data.outflow_streams
             .filter(stream => stream.merchant_name)
