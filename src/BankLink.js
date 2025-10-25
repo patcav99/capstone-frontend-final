@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 
 
-function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccessToken }) {
+function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccessToken, username }) {
+  console.log('DEBUG: BankLink received username prop:', username);
   console.log("BankLink component mounted");
   const [linkToken, setLinkToken] = React.useState(null);
   const [status, setStatus] = React.useState('');
@@ -87,16 +87,19 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccess
     const url = useMockRecurring
       ? 'http://patcav.shop/api/account/get_recurring_transactions/?mock=1'
       : 'http://patcav.shop/api/account/get_recurring_transactions/';
-  fetch(url, {
+    // Always include username in POST body
+    const postBody = { access_token: accessToken, username: username };
+    console.log('DEBUG: Username included in recurring POST body:', username);
+    fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: accessToken }),
+      body: JSON.stringify(postBody),
     })
-  .then(res => res.json())
-  .then(data => {
-  setRecurring(data);
-  setStatus('Fetched recurring transactions!');
-  if (onRecurringFetched) onRecurringFetched();
+      .then(res => res.json())
+      .then(data => {
+        setRecurring(data);
+        setStatus('Fetched recurring transactions!');
+        if (onRecurringFetched) onRecurringFetched();
         if (data && data.outflow_streams) {
           const newSubs = data.outflow_streams
             .filter(stream => stream.merchant_name)
@@ -117,10 +120,12 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccess
           // Always send new subscriptions to backend to save website_url
           if (newSubs.length > 0) {
             console.log('POSTing new merchant subscriptions to backend (full payload):', newSubs);
+            const postBody = { items: newSubs, username: username };
+            console.log('DEBUG: Username included in receive-list POST body:', username);
             fetch('http://patcav.shop/api/account/receive-list/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ items: newSubs })
+              body: JSON.stringify(postBody)
             })
               .then(res => res.json())
               .then(data => {

@@ -106,8 +106,12 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
 
   useImperativeHandle(ref, () => ({ fetchAndCheckAverages }));
 
-  // Initial fetch on mount
-  useEffect(() => { fetchAndCheckAverages(); }, []);
+  // Initial fetch on mount, only if accessToken exists
+  useEffect(() => {
+    if (accessToken) {
+      fetchAndCheckAverages();
+    }
+  }, [accessToken]);
 
   const handleToggleTotal = () => {
     if (showTotal) {
