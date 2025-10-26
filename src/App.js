@@ -9,28 +9,51 @@ function App() {
   const [newSub, setNewSub] = useState("");
   const [adding, setAdding] = useState(false);
   const subListRef = useRef();
-  const [accessToken, setAccessToken] = useState(localStorage.getItem('token') || null);
-  const [showLogin, setShowLogin] = useState(!localStorage.getItem('token'));
+  // Helper to check if token is valid (non-empty string)
+  function isTokenValid(token) {
+    return typeof token === 'string' && token.trim().length > 0;
+  }
+  const initialToken = localStorage.getItem('token');
+  const [accessToken, setAccessToken] = useState(isTokenValid(initialToken) ? initialToken : null);
+  const [showLogin, setShowLogin] = useState(!isTokenValid(initialToken));
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    if (accessToken && !showLogin) {
-      fetchSubscriptions();
+    // Only fetch subscriptions if logged in and token exists
+    if (showLogin || !isTokenValid(accessToken)) {
+      // Do not fetch subscriptions before login or with invalid token
+      return;
     }
+    fetchSubscriptions();
     // eslint-disable-next-line
   }, [accessToken, showLogin]);
 
   async function fetchSubscriptions() {
+    // Prevent running if not logged in or with invalid token
+    console.log('DEBUG: fetchSubscriptions called. accessToken:', accessToken, 'showLogin:', showLogin);
+    if (!isTokenValid(accessToken) || showLogin) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("http://patcav.shop/api/account/my_subscriptions/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {})
+          "Authorization": `Bearer ${accessToken}`
         }
       });
-      if (!res.ok) throw new Error("Failed to fetch subscriptions");
+      if (res.status === 401) {
+        // Token is invalid or expired, clear and show login
+        localStorage.removeItem('token');
+        setAccessToken(null);
+        setShowLogin(true);
+        setError('Session expired. Please log in again.');
+        setLoading(false);
+        return;
+      }
+      if (!res.ok) throw new Error("Failed to fetch subscriptions: " + res.status);
       const data = await res.json();
       setSubscriptions(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -60,6 +83,7 @@ function App() {
   }
 
   if (showLogin) {
+    console.log('DEBUG: Rendering LoginPage (showLogin is true)');
     return (
       <LoginPage 
         onLogin={(token, uname) => { 
@@ -67,7 +91,7 @@ function App() {
           setUsername(uname);
           console.log('DEBUG: Username set in App.js:', uname);
           localStorage.setItem('token', token); 
-          setShowLogin(false); 
+          setShowLogin(!isTokenValid(token)); 
           console.log("Login success, hiding login page");
         }}
         onUsernameChange={setUsername}
@@ -88,7 +112,7 @@ function App() {
       </div>
       <SubscriptionList ref={subListRef} subscriptions={subscriptions} setSubscriptions={setSubscriptions} accessToken={accessToken} />
       <div style={{ marginTop: 20 }}>
-        <button onClick={() => { localStorage.removeItem('token'); setAccessToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
+  <button onClick={() => { localStorage.removeItem('token'); setAccessToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
       </div>
     </div>
   );
