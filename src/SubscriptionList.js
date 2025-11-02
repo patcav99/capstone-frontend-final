@@ -153,7 +153,11 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
                     });
                     if (res.ok) {
                       const data = await res.json();
-                      setDetailsCache(cache => ({ ...cache, [sub.id]: data }));
+                      setDetailsCache(cache => {
+                        const updated = { ...cache, [sub.id]: data };
+                        console.log('DEBUG: detailsCache for sub.id', sub.id, updated[sub.id]);
+                        return updated;
+                      });
                     }
                   } catch (err) {}
                 }}
@@ -200,6 +204,49 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
                 {detailsCache[sub.id].website_url && (
                   <div>
                     <b>Website:</b> <a href={detailsCache[sub.id].website_url} target="_blank" rel="noopener noreferrer">{detailsCache[sub.id].website_url}</a>
+                  </div>
+                )}
+                {/* Cancel button only in details dropdown */}
+                {(detailsCache[sub.id].cancel_url || detailsCache[sub.id].reactivate_url) && (
+                  <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                    {detailsCache[sub.id].cancel_url && (
+                      <a
+                        href={detailsCache[sub.id].cancel_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '6px 16px',
+                          background: '#ff9800',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Cancel Subscription
+                      </a>
+                    )}
+                    {detailsCache[sub.id].reactivate_url && (
+                      <a
+                        href={detailsCache[sub.id].reactivate_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '6px 16px',
+                          background: '#388e3c',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Reactivate Subscription
+                      </a>
+                    )}
                   </div>
                 )}
                 {/* Show Payment History Button */}
