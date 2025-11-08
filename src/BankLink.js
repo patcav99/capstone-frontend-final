@@ -87,8 +87,10 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccess
     const url = useMockRecurring
       ? 'http://patcav.shop/api/account/get_recurring_transactions/?mock=1'
       : 'http://patcav.shop/api/account/get_recurring_transactions/';
-    // Always include username in POST body
-    const postBody = { access_token: accessToken, username: username };
+    // Always include username in POST body, and mock: true if using mock
+    const postBody = useMockRecurring
+      ? { access_token: accessToken, username: username, mock: true }
+      : { access_token: accessToken, username: username };
     console.log('DEBUG: Username included in recurring POST body:', username);
     fetch(url, {
       method: 'POST',

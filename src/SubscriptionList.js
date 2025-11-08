@@ -36,6 +36,11 @@ function TotalPriceButton({ averages, subscriptions, show, total, onToggle }) {
 }
 
 const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessToken }, ref) => {
+  // Split subscriptions into active and inactive
+  const activeSubs = subscriptions.filter(sub => sub.is_active !== false);
+  const inactiveSubs = subscriptions.filter(sub => sub.is_active === false);
+  // Debug log for inactive subscriptions
+  console.log('DEBUG inactiveSubs:', inactiveSubs);
   const [openDropdown, setOpenDropdown] = useState({});
   const [detailsCache, setDetailsCache] = useState({});
   const [averages, setAverages] = useState({});
@@ -62,7 +67,11 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
         if (data && data.subscriptions) {
           const avgMap = {};
           const newNotifications = [];
-          data.subscriptions.forEach(sub => {
+          // Only consider active subscriptions for notifications
+          const activeSubsOnly = data.subscriptions.filter(sub => sub.is_active === true);
+          console.log('DEBUG subscriptions here:', data.subscriptions);
+          console.log('DEBUG activeSubsOnly for notifications:', activeSubsOnly);
+          activeSubsOnly.forEach(sub => {
             avgMap[sub.id] = sub.average_amount;
             // Days until predicted next date
             if (sub.predicted_next_date) {
@@ -79,19 +88,21 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
           });
           // Always compare against the latest prevAverages in state
           Object.keys(avgMap).forEach(id => {
+            const sub = activeSubsOnly.find(s => s.id === Number(id));
+            if (!sub) return;
             if (
               prevAverages[id] !== undefined &&
               avgMap[id] !== undefined &&
               avgMap[id] !== prevAverages[id]
             ) {
               newNotifications.push(
-                `Subscription "${data.subscriptions.find(s => s.id === Number(id))?.name || id}" changed its rate from $${prevAverages[id]} to $${avgMap[id]}`
+                `Subscription "${sub.name || id}" changed its rate from $${prevAverages[id]} to $${avgMap[id]}`
               );
             } else if (
               prevAverages[id] === undefined && avgMap[id] !== undefined
             ) {
               newNotifications.push(
-                `Subscription "${data.subscriptions.find(s => s.id === Number(id))?.name || id}" rate is $${avgMap[id]}`
+                `Subscription "${sub.name || id}" rate is $${avgMap[id]}`
               );
             }
           });
@@ -111,6 +122,10 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
     if (accessToken) {
       fetchAndCheckAverages();
     }
+    // Debug log after fetching mock transactions
+    console.log('DEBUG subscriptions after fetch:', subscriptions);
+    const inactiveSubs = subscriptions.filter(sub => sub.is_active === false);
+    console.log('DEBUG inactiveSubs after fetch:', inactiveSubs);
   }, [accessToken]);
 
   const handleToggleTotal = () => {
@@ -118,7 +133,7 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
       setShowTotal(false);
     } else {
       let sum = 0;
-      subscriptions.forEach(sub => {
+      activeSubs.forEach(sub => {
         let amt = averages[sub.id];
         if (amt !== undefined && amt !== null) {
           let num = typeof amt === 'number' ? amt : parseFloat(amt);
@@ -133,13 +148,13 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
       <div style={{ flex: 2 }}>
         <h2>My Subscriptions</h2>
-        {subscriptions.map(sub => (
+        {activeSubs.map(sub => (
           <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc', borderRadius: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ flex: 1 }}>{sub.name}</span>
+              <span style={{ flex: 1 }}>{sub.name || sub.merchant_name}</span>
               <button
                 style={{ marginLeft: 8, padding: '4px 12px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
                 onClick={async () => {
@@ -209,7 +224,8 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
                 {/* Cancel button only in details dropdown */}
                 {(detailsCache[sub.id].cancel_url || detailsCache[sub.id].reactivate_url) && (
                   <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                    {detailsCache[sub.id].cancel_url && (
+                    {/* Only show Cancel button for active subscriptions */}
+                    {activeSubs.some(s => s.id === sub.id) && detailsCache[sub.id].cancel_url && (
                       <a
                         href={detailsCache[sub.id].cancel_url}
                         target="_blank"
@@ -228,7 +244,176 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
                         Cancel Subscription
                       </a>
                     )}
-                    {detailsCache[sub.id].reactivate_url && (
+                    {/* Only show Reactivate button for inactive subscriptions */}
+                    {inactiveSubs.some(s => s.id === sub.id) && detailsCache[sub.id].reactivate_url && (
+                      <a
+                        href={detailsCache[sub.id].reactivate_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '6px 16px',
+                          background: '#388e3c',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Reactivate Subscription
+                      </a>
+                    )}
+                  </div>
+                )}
+                {/* Show Payment History Button */}
+                {detailsCache[sub.id].transaction_ids && Array.isArray(detailsCache[sub.id].transaction_ids) && detailsCache[sub.id].transaction_ids.length > 0 && (
+                  <button
+                    style={{ marginTop: 12, padding: '6px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}
+                    onClick={async () => {
+                      // POST transaction_ids to backend
+                      const requestBody = {
+                        access_token: accessToken,
+                        transaction_ids: detailsCache[sub.id].transaction_ids
+                      };
+                      console.log('Payment History Request:', requestBody);
+                      try {
+                        const res = await fetch('http://patcav.shop/api/account/get_transactions/', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify(requestBody)
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setPaymentHistory(hist => ({ ...hist, [sub.id]: data.transactions }));
+                        } else {
+                          alert('Failed to fetch payment history.');
+                        }
+                      } catch (err) {
+                        alert('Network error while fetching payment history.');
+                      }
+                    }}
+                  >
+                    Show Payment History
+                  </button>
+                )}
+                {/* Payment History Display */}
+                {paymentHistory[sub.id] && Array.isArray(paymentHistory[sub.id]) && paymentHistory[sub.id].length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <b>Payment History:</b>
+                    <ul style={{ paddingLeft: 18 }}>
+                      {paymentHistory[sub.id].map(tx => (
+                        <li key={tx.transaction_id}>
+                          {tx.date}: ${tx.amount} - {tx.name || tx.merchant_name || 'Transaction'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {/* Past Subscriptions List */}
+      <div style={{ flex: 2, marginTop: 40 }}>
+        <h2>Past Subscriptions</h2>
+        {inactiveSubs.length === 0 && <div>No past subscriptions found.</div>}
+        {inactiveSubs.map(sub => (
+          <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #eee', borderRadius: 4, background: '#f8f8f8' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ flex: 1, color: '#888' }}>{sub.name || sub.merchant_name}</span>
+              <button
+                style={{ marginLeft: 8, padding: '4px 12px', background: '#aaa', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                onClick={async () => {
+                  setOpenDropdown(prev => ({ ...prev, [sub.id]: !prev[sub.id] }));
+                  try {
+                    const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/`, {
+                      method: 'GET',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setDetailsCache(cache => {
+                        const updated = { ...cache, [sub.id]: data };
+                        console.log('DEBUG: detailsCache for sub.id', sub.id, updated[sub.id]);
+                        return updated;
+                      });
+                    }
+                  } catch (err) {}
+                }}
+              >
+                {openDropdown[sub.id] ? 'Hide Details' : 'Show Details'}
+              </button>
+              <button
+                style={{ marginLeft: 8, padding: '4px 12px', background: '#d32f2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (window.confirm(`Are you sure you want to delete ${sub.name}?`)) {
+                    try {
+                      const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/delete/`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                      });
+                      if (res.ok) {
+                        setSubscriptions(subs => subs.filter(s => s.id !== sub.id));
+                      } else {
+                        alert('Failed to delete subscription.');
+                      }
+                    } catch (err) {
+                      alert('Network error while deleting subscription.');
+                    }
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </div>
+            {openDropdown[sub.id] && detailsCache[sub.id] && (
+              <div style={{ marginTop: 8, background: '#f9f9f9', padding: 10, borderRadius: 4, border: '1px solid #eee' }}>
+                {detailsCache[sub.id].description && <div><b>Description:</b> {detailsCache[sub.id].description}</div>}
+                {detailsCache[sub.id].first_date && <div><b>First Date:</b> {detailsCache[sub.id].first_date}</div>}
+                {detailsCache[sub.id].last_date && <div><b>Last Date:</b> {detailsCache[sub.id].last_date}</div>}
+                {detailsCache[sub.id].frequency && <div><b>Frequency:</b> {detailsCache[sub.id].frequency}</div>}
+                {detailsCache[sub.id].average_amount && <div><b>Average Amount:</b> {detailsCache[sub.id].average_amount}</div>}
+                {detailsCache[sub.id].last_amount && <div><b>Last Amount:</b> {detailsCache[sub.id].last_amount}</div>}
+                {detailsCache[sub.id].is_active !== undefined && <div><b>Is Active:</b> {detailsCache[sub.id].is_active ? 'Yes' : 'No'}</div>}
+                {detailsCache[sub.id].predicted_next_date && <div><b>Predicted Next Date:</b> {detailsCache[sub.id].predicted_next_date}</div>}
+                {detailsCache[sub.id].last_user_modified_time && <div><b>Last User Modified Time:</b> {detailsCache[sub.id].last_user_modified_time}</div>}
+                {detailsCache[sub.id].status && <div><b>Status:</b> {detailsCache[sub.id].status}</div>}
+                {detailsCache[sub.id].website_url && (
+                  <div>
+                    <b>Website:</b> <a href={detailsCache[sub.id].website_url} target="_blank" rel="noopener noreferrer">{detailsCache[sub.id].website_url}</a>
+                  </div>
+                )}
+                {/* Cancel/Reactivate buttons if available */}
+                {(detailsCache[sub.id].cancel_url || detailsCache[sub.id].reactivate_url) && (
+                  <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                    {/* Only show Cancel button for active subscriptions */}
+                    {activeSubs.some(s => s.id === sub.id) && detailsCache[sub.id].cancel_url && (
+                      <a
+                        href={detailsCache[sub.id].cancel_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '6px 16px',
+                          background: '#ff9800',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Cancel Subscription
+                      </a>
+                    )}
+                    {/* Only show Reactivate button for inactive subscriptions */}
+                    {inactiveSubs.some(s => s.id === sub.id) && detailsCache[sub.id].reactivate_url && (
                       <a
                         href={detailsCache[sub.id].reactivate_url}
                         target="_blank"
@@ -301,7 +486,7 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, accessTo
         <div style={{ margin: '24px 0' }}>
           <TotalPriceButton
             averages={averages}
-            subscriptions={subscriptions}
+            subscriptions={activeSubs}
             show={showTotal}
             total={total}
             onToggle={handleToggleTotal}
