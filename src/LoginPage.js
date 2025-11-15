@@ -32,13 +32,15 @@ export default function LoginPage({ onLogin, onUsernameChange, username }) {
           password
         };
       }
+      console.log('DEBUG: Username value before login request:', username);
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      console.log('Login/Register response:', data); // Debug log
+  const data = await res.json();
+  console.log('Login/Register response:', data); // Debug log
+  console.log('DEBUG: Username value after login response:', username);
       if (!res.ok) {
         setError((data && data.message) || JSON.stringify(data) || 'Login/Register failed');
         setSuccess(null);
@@ -49,6 +51,7 @@ export default function LoginPage({ onLogin, onUsernameChange, username }) {
           localStorage.setItem('token', token);
           setSuccess('Login successful!');
           setError(null);
+          console.log('DEBUG: Username passed to onLogin:', username);
           if (typeof onLogin === 'function') onLogin(token, username);
         } else {
           setError('Login/Register succeeded but no access token returned. Please check backend response format.');

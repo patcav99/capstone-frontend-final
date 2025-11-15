@@ -2,7 +2,7 @@ import React from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 
 
-function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccessToken, username }) {
+function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setPlaidToken, username }) {
   console.log('DEBUG: BankLink received username prop:', username);
   console.log("BankLink component mounted");
   const [linkToken, setLinkToken] = React.useState(null);
@@ -11,14 +11,14 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccess
   const [transactions, setTransactions] = React.useState(null);
   const [recurring, setRecurring] = React.useState(null);
   const [useMockRecurring, setUseMockRecurring] = React.useState(false);
-  // accessToken is now passed as a prop from App
+  // accessToken is now the Plaid token, setPlaidToken updates it
   const fetchTransactions = () => {
-    if (!setAccessToken) return;
+    if (!accessToken) return;
     setStatus('Fetching transactions...');
     fetch('http://patcav.shop/api/account/get_transactions/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: setAccessToken }),
+      body: JSON.stringify({ access_token: accessToken }),
     })
       .then(res => res.json())
       .then(data => {
@@ -51,12 +51,13 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setAccess
       .then(res => res.json())
       .then(data => {
         setStatus('Bank account linked!');
-        if (typeof setAccessToken === 'function') {
-          setAccessToken(data.access_token);
+        if (typeof setPlaidToken === 'function') {
+          console.log('DEBUG: Setting Plaid token from Plaid API response:', data.access_token);
+          setPlaidToken(data.access_token);
         }
       })
       .catch(() => setStatus('Failed to link account'));
-  }, []);
+  }, [setPlaidToken]);
 
   const config = {
     token: linkToken,

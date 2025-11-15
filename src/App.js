@@ -14,24 +14,26 @@ function App() {
     return typeof token === 'string' && token.trim().length > 0;
   }
   const initialToken = localStorage.getItem('token');
-  const [accessToken, setAccessToken] = useState(isTokenValid(initialToken) ? initialToken : null);
+  const [jwtToken, setJwtToken] = useState(isTokenValid(initialToken) ? initialToken : null);
+  // plaidToken should only be set from Plaid API response, never from JWT
+  const [plaidToken, setPlaidToken] = useState(null);
   const [showLogin, setShowLogin] = useState(!isTokenValid(initialToken));
-  const [username, setUsername] = useState("");
-
+  // ...existing code...
+    const [username, setUsername] = useState(() => window.localStorage.getItem('username') || "");
   useEffect(() => {
     // Only fetch subscriptions if logged in and token exists
-    if (showLogin || !isTokenValid(accessToken)) {
+    if (showLogin || !isTokenValid(jwtToken)) {
       // Do not fetch subscriptions before login or with invalid token
       return;
     }
     fetchSubscriptions();
     // eslint-disable-next-line
-  }, [accessToken, showLogin]);
+  }, [jwtToken, showLogin]);
 
   async function fetchSubscriptions() {
     // Prevent running if not logged in or with invalid token
-    console.log('DEBUG: fetchSubscriptions called. accessToken:', accessToken, 'showLogin:', showLogin);
-    if (!isTokenValid(accessToken) || showLogin) {
+    console.log('DEBUG: fetchSubscriptions called. jwtToken:', jwtToken, 'showLogin:', showLogin);
+    if (!isTokenValid(jwtToken) || showLogin) {
       setLoading(false);
       return;
     }
@@ -41,13 +43,13 @@ function App() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
+          "Authorization": `Bearer ${jwtToken}`
         }
       });
       if (res.status === 401) {
         // Token is invalid or expired, clear and show login
         localStorage.removeItem('token');
-        setAccessToken(null);
+        setJwtToken(null);
         setShowLogin(true);
         setError('Session expired. Please log in again.');
         setLoading(false);
@@ -87,11 +89,12 @@ function App() {
     return (
       <LoginPage 
         onLogin={(token, uname) => { 
-          setAccessToken(token); 
+          setJwtToken(token); 
           setUsername(uname);
           console.log('DEBUG: Username set in App.js:', uname);
           localStorage.setItem('token', token); 
           setShowLogin(!isTokenValid(token)); 
+          // DO NOT setPlaidToken here; plaidToken is only set from Plaid API response
           console.log("Login success, hiding login page");
         }}
         onUsernameChange={setUsername}
@@ -100,19 +103,32 @@ function App() {
     );
   }
 
-  if (loading) return <div className="App" style={{ marginTop: 40 }}>Loading subscriptions...</div>;
-  if (error) return <div className="App" style={{ marginTop: 40 }}>Error: {error}</div>;
+  if (!showLogin && loading) return <div className="App" style={{ marginTop: 40 }}>Loading subscriptions...</div>;
+  if (!showLogin && error) return <div className="App" style={{ marginTop: 40 }}>Error: {error}</div>;
 
   // Only render subscription components after login
+  console.log('DEBUG: Username value in App.js before BankLink render:', username);
   return (
     <div className="App" style={{ marginTop: 40 }}>
       <div style={{ marginBottom: 24 }}>
-  <BankLink setSubscriptions={setSubscriptions} onRecurringFetched={() => subListRef.current?.fetchAndCheckAverages()} accessToken={accessToken} setAccessToken={setAccessToken} username={username} />
-  {console.log('DEBUG: Username prop to BankLink:', username)}
+        <BankLink
+          setSubscriptions={setSubscriptions}
+          onRecurringFetched={() => subListRef.current?.fetchAndCheckAverages()}
+          accessToken={plaidToken}
+          setPlaidToken={setPlaidToken}
+          username={username}
+        />
+        {console.log('DEBUG: Username prop to BankLink:', username)}
       </div>
-      <SubscriptionList ref={subListRef} subscriptions={subscriptions} setSubscriptions={setSubscriptions} accessToken={accessToken} />
+      <SubscriptionList
+        ref={subListRef}
+        subscriptions={subscriptions}
+        setSubscriptions={setSubscriptions}
+        jwtToken={jwtToken}
+        plaidToken={plaidToken}
+      />
       <div style={{ marginTop: 20 }}>
-  <button onClick={() => { localStorage.removeItem('token'); setAccessToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
+        <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
       </div>
     </div>
   );
