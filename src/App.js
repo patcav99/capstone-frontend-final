@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import BankLink from "./BankLink";
 import SubscriptionList from "./SubscriptionList";
 import LoginPage from "./LoginPage";
+import PasswordResetForm from "./PasswordResetForm";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 function App() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,53 +86,63 @@ function App() {
     }
   }
 
-  if (showLogin) {
-    console.log('DEBUG: Rendering LoginPage (showLogin is true)');
-    return (
-      <LoginPage 
-        onLogin={(token, uname) => { 
-          setJwtToken(token); 
-          setUsername(uname);
-          console.log('DEBUG: Username set in App.js:', uname);
-          localStorage.setItem('token', token); 
-          setShowLogin(!isTokenValid(token)); 
-          // DO NOT setPlaidToken here; plaidToken is only set from Plaid API response
-          console.log("Login success, hiding login page");
-        }}
-        onUsernameChange={setUsername}
-        username={username}
-      />
-    );
-  }
-
-  if (!showLogin && loading) return <div className="App" style={{ marginTop: 40 }}>Loading subscriptions...</div>;
-  if (!showLogin && error) return <div className="App" style={{ marginTop: 40 }}>Error: {error}</div>;
-
-  // Only render subscription components after login
-  console.log('DEBUG: Username value in App.js before BankLink render:', username);
   return (
-    <div className="App" style={{ marginTop: 40 }}>
-      <div style={{ marginBottom: 24 }}>
-        <BankLink
-          setSubscriptions={setSubscriptions}
-          onRecurringFetched={() => subListRef.current?.fetchAndCheckAverages()}
-          accessToken={plaidToken}
-          setPlaidToken={setPlaidToken}
-          username={username}
+    <Router>
+      <Routes>
+        <Route
+          path="/password-reset-confirm"
+          element={<PasswordResetForm />}
         />
-        {console.log('DEBUG: Username prop to BankLink:', username)}
-      </div>
-      <SubscriptionList
-        ref={subListRef}
-        subscriptions={subscriptions}
-        setSubscriptions={setSubscriptions}
-        jwtToken={jwtToken}
-        plaidToken={plaidToken}
-      />
-      <div style={{ marginTop: 20 }}>
-        <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
-      </div>
-    </div>
+        <Route
+          path="/*"
+          element={
+            showLogin ? (
+              <LoginPage
+                onLogin={(token, uname) => {
+                  setJwtToken(token);
+                  setUsername(uname);
+                  console.log('DEBUG: Username set in App.js:', uname);
+                  localStorage.setItem('token', token);
+                  setShowLogin(!isTokenValid(token));
+                  // DO NOT setPlaidToken here; plaidToken is only set from Plaid API response
+                  console.log("Login success, hiding login page");
+                }}
+                onUsernameChange={setUsername}
+                username={username}
+              />
+            ) : loading ? (
+              <div className="App" style={{ marginTop: 40 }}>Loading subscriptions...</div>
+            ) : error ? (
+              <div className="App" style={{ marginTop: 40 }}>Error: {error}</div>
+            ) : (
+              <div className="App" style={{ marginTop: 40 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
+                </div>
+                <h1 style={{ textAlign: 'left', fontSize: '2.5rem', marginBottom: 32, marginLeft: 0 }}>RateMate!</h1>
+                <div style={{ marginBottom: 24 }}>
+                  <BankLink
+                    setSubscriptions={setSubscriptions}
+                    onRecurringFetched={() => subListRef.current?.fetchAndCheckAverages()}
+                    accessToken={plaidToken}
+                    setPlaidToken={setPlaidToken}
+                    username={username}
+                  />
+                  {console.log('DEBUG: Username prop to BankLink:', username)}
+                </div>
+                <SubscriptionList
+                  ref={subListRef}
+                  subscriptions={subscriptions}
+                  setSubscriptions={setSubscriptions}
+                  jwtToken={jwtToken}
+                  plaidToken={plaidToken}
+                />
+              </div>
+            )
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 

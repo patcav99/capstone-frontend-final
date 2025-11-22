@@ -41,8 +41,24 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
   const [showRankModal, setShowRankModal] = useState(false);
   const [rankInputs, setRankInputs] = useState({});
   const [pendingBudget, setPendingBudget] = useState('');
-  const activeSubs = subscriptions.filter(sub => sub.is_active !== false);
-  const inactiveSubs = subscriptions.filter(sub => sub.is_active === false);
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  const now = new Date();
+  const activeSubs = subscriptions.filter(sub => {
+    if (sub.is_active === false) return false;
+    if (sub.last_date) {
+      const lastDate = new Date(sub.last_date);
+      if (now - lastDate > THIRTY_DAYS_MS) return false;
+    }
+    return true;
+  });
+  const inactiveSubs = subscriptions.filter(sub => {
+    if (sub.is_active === false) return true;
+    if (sub.last_date) {
+      const lastDate = new Date(sub.last_date);
+      if (now - lastDate > THIRTY_DAYS_MS) return true;
+    }
+    return false;
+  });
   // Debug log for inactive subscriptions
   console.log('DEBUG inactiveSubs:', inactiveSubs);
   const [openDropdown, setOpenDropdown] = useState({});

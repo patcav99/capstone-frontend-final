@@ -84,7 +84,7 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setPlaidT
 
   const fetchRecurring = () => {
     if (!accessToken) return;
-    setStatus('Fetching recurring transactions...');
+    setStatus('Fetching subscriptions...');
     const url = useMockRecurring
       ? 'http://patcav.shop/api/account/get_recurring_transactions/?mock=1'
       : 'http://patcav.shop/api/account/get_recurring_transactions/';
@@ -101,7 +101,7 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setPlaidT
       .then(res => res.json())
       .then(data => {
         setRecurring(data);
-        setStatus('Fetched recurring transactions!');
+        setStatus('Fetched subscriptions!');
         if (onRecurringFetched) onRecurringFetched();
         if (data && data.outflow_streams) {
           const newSubs = data.outflow_streams
@@ -143,7 +143,7 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setPlaidT
           }
         }
       })
-      .catch(() => setStatus('Failed to fetch recurring transactions'));
+      .catch(() => setStatus('Failed to fetch subscriptions'));
   };
 
 
@@ -153,41 +153,19 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setPlaidT
         Link Bank Account
       </button>
       {status && <div>{status}</div>}
-      {accessToken && (
-        <button onClick={fetchBalances} style={{ marginLeft: 8 }}>
-          Fetch Account Balances
-        </button>
-      )}
-      {balances && (
-        <pre style={{ textAlign: 'left', background: '#f4f4f4', padding: 10, marginTop: 10 }}>
-          {JSON.stringify(balances, null, 2)}
-        </pre>
-      )}
+      {/* Removed Fetch Account Balances button and balances display */}
       {accessToken && (
         <>
           <button onClick={() => setUseMockRecurring(v => !v)} style={{ marginLeft: 8 }}>
-            {useMockRecurring ? 'Use Plaid Recurring' : 'Use Mock Recurring'}
+            {useMockRecurring ? 'Use Plaid Subscriptions' : 'Use Mock Subscriptions'}
           </button>
           <button onClick={fetchRecurring} style={{ marginLeft: 8 }}>
-            Fetch Recurring Transactions
+            Fetch Subscriptions
           </button>
         </>
       )}
-      {recurring && (
-        <pre style={{ textAlign: 'left', background: '#fffbe8', padding: 10, marginTop: 10 }}>
-          {JSON.stringify(recurring, null, 2)}
-        </pre>
-      )}
-      {accessToken && (
-        <button onClick={fetchTransactions} style={{ marginLeft: 8 }}>
-          Fetch Transactions
-        </button>
-      )}
-      {transactions && (
-        <pre style={{ textAlign: 'left', background: '#e8f7ff', padding: 10, marginTop: 10 }}>
-          {JSON.stringify(transactions, null, 2)}
-        </pre>
-      )}
+      {/* Removed display of recurring transactions results */}
+      {/* Removed Fetch Transactions button and transactions display */}
     </div>
   );
 }
