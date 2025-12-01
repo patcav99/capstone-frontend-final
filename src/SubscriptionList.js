@@ -174,9 +174,9 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
     <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'row' }}>
       <div style={{ flex: 2, minWidth: 400 }}>
         <div style={{ flex: 2 }}>
-          <h2>My Subscriptions</h2>
+          <h2 className="heading-section">My Subscriptions</h2>
           {activeSubs.map(sub => (
-            <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc', borderRadius: 4 }}>
+            <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc', borderRadius: 4, background: '#218c4a', color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{ flex: 1 }}>{sub.name || sub.merchant_name}</span>
                 <button
@@ -229,7 +229,7 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
                 </button>
               </div>
               {openDropdown[sub.id] && detailsCache[sub.id] && (
-                <div style={{ marginTop: 8, background: '#f9f9f9', padding: 10, borderRadius: 4, border: '1px solid #eee' }}>
+                <div style={{ marginTop: 8, background: '#218c4a', padding: 10, borderRadius: 4, border: '1px solid #eee', color: '#fff' }}>
                   {detailsCache[sub.id].description && <div><b>Description:</b> {detailsCache[sub.id].description}</div>}
                   {detailsCache[sub.id].first_date && <div><b>First Date:</b> {detailsCache[sub.id].first_date}</div>}
                   {detailsCache[sub.id].last_date && <div><b>Last Date:</b> {detailsCache[sub.id].last_date}</div>}
@@ -346,10 +346,10 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
         </div>
         {/* Past Subscriptions List */}
         <div style={{ flex: 2, marginTop: 40 }}>
-          <h2>Past Subscriptions</h2>
+          <h2 className="heading-section">Past Subscriptions</h2>
           {inactiveSubs.length === 0 && <div>No past subscriptions found.</div>}
           {inactiveSubs.map(sub => (
-            <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #eee', borderRadius: 4, background: '#f8f8f8' }}>
+            <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #eee', borderRadius: 4, background: '#218c4a', color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{ flex: 1, color: '#888' }}>{sub.name || sub.merchant_name}</span>
                 <button
@@ -401,7 +401,7 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
                 </button>
               </div>
               {openDropdown[sub.id] && detailsCache[sub.id] && (
-                <div style={{ marginTop: 8, background: '#f9f9f9', padding: 10, borderRadius: 4, border: '1px solid #eee' }}>
+                <div style={{ marginTop: 8, background: '#218c4a', padding: 10, borderRadius: 4, border: '1px solid #eee', color: '#fff' }}>
                   {detailsCache[sub.id].description && <div><b>Description:</b> {detailsCache[sub.id].description}</div>}
                   {detailsCache[sub.id].first_date && <div><b>First Date:</b> {detailsCache[sub.id].first_date}</div>}
                   {detailsCache[sub.id].last_date && <div><b>Last Date:</b> {detailsCache[sub.id].last_date}</div>}

@@ -1,3 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+
+body {
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  background: #218c4a;
+  color: #fff;
+}
+
+.heading-main, .heading-section {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
 .App {
   text-align: center;
 }

@@ -119,7 +119,7 @@ function App() {
                 <div style={{ marginBottom: 8 }}>
                   <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
                 </div>
-                <h1 style={{ textAlign: 'left', fontSize: '2.5rem', marginBottom: 32, marginLeft: 0 }}>RateMate!</h1>
+                <h1 className="heading-main" style={{ textAlign: 'left', fontSize: '2.5rem', marginBottom: 32, marginLeft: 0 }}>RateMate!</h1>
                 <div style={{ marginBottom: 24 }}>
                   <BankLink
                     setSubscriptions={setSubscriptions}
