@@ -172,10 +172,20 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
     }
   };
 
+  // Get username from localStorage (or pass as prop if preferred)
+  const username = window.localStorage.getItem('username') || '';
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'row' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'row', position: 'relative' }}>
       <div style={{ flex: 2, minWidth: 400 }}>
-        <div style={{ flex: 2 }}>
+        <div style={{
+          border: '4px solid #fff',
+          borderRadius: 16,
+          boxSizing: 'border-box',
+          padding: '32px 32px 24px 32px',
+          margin: '0 0 32px 0',
+          background: 'transparent',
+          position: 'relative',
+        }}>
           <h2 className="heading-section">My Subscriptions</h2>
           {activeSubs.map(sub => (
             <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc', borderRadius: 4, background: '#218c4a', color: '#fff' }}>
@@ -352,175 +362,184 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
         </div>
         {/* Past Subscriptions List */}
         <div style={{ flex: 2, marginTop: 40 }}>
-          <h2 className="heading-section">Past Subscriptions</h2>
-          {inactiveSubs.length === 0 && <div>No past subscriptions found.</div>}
-          {inactiveSubs.map(sub => (
-            <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #eee', borderRadius: 4, background: '#218c4a', color: '#fff' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ flex: 1, color: '#888' }}>{sub.name || sub.merchant_name}</span>
-                <button
-                  style={{ marginLeft: 8, padding: '4px 12px', background: '#aaa', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-                  onClick={async () => {
-                    setOpenDropdown(prev => ({ ...prev, [sub.id]: !prev[sub.id] }));
-                    try {
-                      const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/`, {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                      });
-                      if (res.ok) {
-                        const data = await res.json();
-                        setDetailsCache(cache => {
-                          const updated = { ...cache, [sub.id]: data };
-                          console.log('DEBUG: detailsCache for sub.id', sub.id, updated[sub.id]);
-                          return updated;
-                        });
-                      }
-                    } catch (err) {}
-                  }}
-                >
-                  {openDropdown[sub.id] ? 'Hide Details' : 'Show Details'}
-                </button>
-                <button
-                  style={{ marginLeft: 8, padding: '4px 12px', background: '#d32f2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (window.confirm(`Are you sure you want to delete ${sub.name}?`)) {
+          <div style={{
+            border: '4px solid #fff',
+            borderRadius: 16,
+            boxSizing: 'border-box',
+            padding: '32px 32px 24px 32px',
+            background: 'transparent',
+            position: 'relative',
+          }}>
+            <h2 className="heading-section">Past Subscriptions</h2>
+            {inactiveSubs.length === 0 && <div>No past subscriptions found.</div>}
+            {inactiveSubs.map(sub => (
+              <div key={sub.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #eee', borderRadius: 4, background: '#218c4a', color: '#fff' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, color: '#888' }}>{sub.name || sub.merchant_name}</span>
+                  <button
+                    style={{ marginLeft: 8, padding: '4px 12px', background: '#aaa', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    onClick={async () => {
+                      setOpenDropdown(prev => ({ ...prev, [sub.id]: !prev[sub.id] }));
                       try {
-                        const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/delete/`, {
-                          method: 'DELETE',
+                        const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/`, {
+                          method: 'GET',
                           headers: { 'Content-Type': 'application/json' },
                           credentials: 'include',
                         });
                         if (res.ok) {
-                          setSubscriptions(subs => subs.filter(s => s.id !== sub.id));
-                        } else {
-                          alert('Failed to delete subscription.');
+                          const data = await res.json();
+                          setDetailsCache(cache => {
+                            const updated = { ...cache, [sub.id]: data };
+                            console.log('DEBUG: detailsCache for sub.id', sub.id, updated[sub.id]);
+                            return updated;
+                          });
                         }
-                      } catch (err) {
-                        alert('Network error while deleting subscription.');
-                      }
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-              {openDropdown[sub.id] && detailsCache[sub.id] && (
-                <div style={{ marginTop: 8, background: '#218c4a', padding: 10, borderRadius: 4, border: '1px solid #eee', color: '#fff' }}>
-                  {detailsCache[sub.id].description && <div><b>Description:</b> {detailsCache[sub.id].description}</div>}
-                  {detailsCache[sub.id].first_date && <div><b>First Date:</b> {detailsCache[sub.id].first_date}</div>}
-                  {detailsCache[sub.id].last_date && <div><b>Last Date:</b> {detailsCache[sub.id].last_date}</div>}
-                  {detailsCache[sub.id].frequency && <div><b>Frequency:</b> {detailsCache[sub.id].frequency}</div>}
-                  {detailsCache[sub.id].average_amount && <div><b>Average Amount:</b> {detailsCache[sub.id].average_amount}</div>}
-                  {detailsCache[sub.id].last_amount && <div><b>Last Amount:</b> {detailsCache[sub.id].last_amount}</div>}
-                  {detailsCache[sub.id].is_active !== undefined && <div><b>Is Active:</b> {detailsCache[sub.id].is_active ? 'Yes' : 'No'}</div>}
-                  {detailsCache[sub.id].predicted_next_date && <div><b>Predicted Next Date:</b> {detailsCache[sub.id].predicted_next_date}</div>}
-                  {detailsCache[sub.id].last_user_modified_time && <div><b>Last User Modified Time:</b> {detailsCache[sub.id].last_user_modified_time}</div>}
-                  {detailsCache[sub.id].status && <div><b>Status:</b> {detailsCache[sub.id].status}</div>}
-                  {detailsCache[sub.id].website_url && (
-                    <div>
-                      <b>Website:</b> <a href={detailsCache[sub.id].website_url} target="_blank" rel="noopener noreferrer">{detailsCache[sub.id].website_url}</a>
-                    </div>
-                  )}
-                  {/* Cancel/Reactivate buttons if available */}
-                  {(detailsCache[sub.id].cancel_url || detailsCache[sub.id].reactivate_url) && (
-                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                      {/* Only show Cancel button for active subscriptions */}
-                      {activeSubs.some(s => s.id === sub.id) && detailsCache[sub.id].cancel_url && (
-                        <a
-                          href={detailsCache[sub.id].cancel_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: '6px 16px',
-                            background: '#ff9800',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            textDecoration: 'none',
-                            fontWeight: 500,
-                          }}
-                        >
-                          Cancel Subscription
-                        </a>
-                      )}
-                      {/* Only show Reactivate button for inactive subscriptions */}
-                      {inactiveSubs.some(s => s.id === sub.id) && detailsCache[sub.id].reactivate_url && (
-                        <a
-                          href={detailsCache[sub.id].reactivate_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: '6px 16px',
-                            background: '#388e3c',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            textDecoration: 'none',
-                            fontWeight: 500,
-                          }}
-                        >
-                          Reactivate Subscription
-                        </a>
-                      )}
-                    </div>
-                  )}
-                  {/* Show Payment History Button */}
-                  {detailsCache[sub.id].transaction_ids && Array.isArray(detailsCache[sub.id].transaction_ids) && detailsCache[sub.id].transaction_ids.length > 0 && (
-                    <button
-                      style={{ marginTop: 12, padding: '6px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}
-                      onClick={async () => {
-                        // Only send Plaid access token for Plaid-linked subscriptions
-                        if (detailsCache[sub.id].merchant_name && plaidToken) {
-                          const requestBody = {
-                            access_token: plaidToken,
-                            transaction_ids: detailsCache[sub.id].transaction_ids
-                          };
-                          console.log('DEBUG Show Payment History: requestBody', requestBody);
-                          try {
-                            const res = await fetch('http://patcav.shop/api/account/get_transactions/', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              credentials: 'include',
-                              body: JSON.stringify(requestBody)
-                            });
-                            if (res.ok) {
-                              const data = await res.json();
-                              setPaymentHistory(hist => ({ ...hist, [sub.id]: data.transactions }));
-                            } else {
-                              alert('Failed to fetch payment history.');
-                            }
-                          } catch (err) {
-                            alert('Network error while fetching payment history.');
+                      } catch (err) {}
+                    }}
+                  >
+                    {openDropdown[sub.id] ? 'Hide Details' : 'Show Details'}
+                  </button>
+                  <button
+                    style={{ marginLeft: 8, padding: '4px 12px', background: '#d32f2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Are you sure you want to delete ${sub.name}?`)) {
+                        try {
+                          const res = await fetch(`http://patcav.shop/api/account/subscription/${sub.id}/delete/`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                          });
+                          if (res.ok) {
+                            setSubscriptions(subs => subs.filter(s => s.id !== sub.id));
+                          } else {
+                            alert('Failed to delete subscription.');
                           }
-                        } else {
-                          alert('Payment history is only available for Plaid-linked subscriptions.');
+                        } catch (err) {
+                          alert('Network error while deleting subscription.');
                         }
-                      }}
-                    >
-                      Show Payment History
-                    </button>
-                  )}
-                  {/* Payment History Display */}
-                  {paymentHistory[sub.id] && Array.isArray(paymentHistory[sub.id]) && paymentHistory[sub.id].length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <b>Payment History:</b>
-                      <ul style={{ paddingLeft: 18 }}>
-                        {paymentHistory[sub.id].map(tx => (
-                          <li key={tx.transaction_id}>
-                            {tx.date}: ${tx.amount} - {tx.name || tx.merchant_name || 'Transaction'}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
                 </div>
-              )}
-            </div>
-          ))}
+                {openDropdown[sub.id] && detailsCache[sub.id] && (
+                  <div style={{ marginTop: 8, background: '#218c4a', padding: 10, borderRadius: 4, border: '1px solid #eee', color: '#fff' }}>
+                    {detailsCache[sub.id].description && <div><b>Description:</b> {detailsCache[sub.id].description}</div>}
+                    {detailsCache[sub.id].first_date && <div><b>First Date:</b> {detailsCache[sub.id].first_date}</div>}
+                    {detailsCache[sub.id].last_date && <div><b>Last Date:</b> {detailsCache[sub.id].last_date}</div>}
+                    {detailsCache[sub.id].frequency && <div><b>Frequency:</b> {detailsCache[sub.id].frequency}</div>}
+                    {detailsCache[sub.id].average_amount && <div><b>Average Amount:</b> {detailsCache[sub.id].average_amount}</div>}
+                    {detailsCache[sub.id].last_amount && <div><b>Last Amount:</b> {detailsCache[sub.id].last_amount}</div>}
+                    {detailsCache[sub.id].is_active !== undefined && <div><b>Is Active:</b> {detailsCache[sub.id].is_active ? 'Yes' : 'No'}</div>}
+                    {detailsCache[sub.id].predicted_next_date && <div><b>Predicted Next Date:</b> {detailsCache[sub.id].predicted_next_date}</div>}
+                    {detailsCache[sub.id].last_user_modified_time && <div><b>Last User Modified Time:</b> {detailsCache[sub.id].last_user_modified_time}</div>}
+                    {detailsCache[sub.id].status && <div><b>Status:</b> {detailsCache[sub.id].status}</div>}
+                    {detailsCache[sub.id].website_url && (
+                      <div>
+                        <b>Website:</b> <a href={detailsCache[sub.id].website_url} target="_blank" rel="noopener noreferrer">{detailsCache[sub.id].website_url}</a>
+                      </div>
+                    )}
+                    {/* Cancel/Reactivate buttons if available */}
+                    {(detailsCache[sub.id].cancel_url || detailsCache[sub.id].reactivate_url) && (
+                      <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                        {/* Only show Cancel button for active subscriptions */}
+                        {activeSubs.some(s => s.id === sub.id) && detailsCache[sub.id].cancel_url && (
+                          <a
+                            href={detailsCache[sub.id].cancel_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: '6px 16px',
+                              background: '#ff9800',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              textDecoration: 'none',
+                              fontWeight: 500,
+                            }}
+                          >
+                            Cancel Subscription
+                          </a>
+                        )}
+                        {/* Only show Reactivate button for inactive subscriptions */}
+                        {inactiveSubs.some(s => s.id === sub.id) && detailsCache[sub.id].reactivate_url && (
+                          <a
+                            href={detailsCache[sub.id].reactivate_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: '6px 16px',
+                              background: '#388e3c',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              textDecoration: 'none',
+                              fontWeight: 500,
+                            }}
+                          >
+                            Reactivate Subscription
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {/* Show Payment History Button */}
+                    {detailsCache[sub.id].transaction_ids && Array.isArray(detailsCache[sub.id].transaction_ids) && detailsCache[sub.id].transaction_ids.length > 0 && (
+                      <button
+                        style={{ marginTop: 12, padding: '6px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}
+                        onClick={async () => {
+                          // Only send Plaid access token for Plaid-linked subscriptions
+                          if (detailsCache[sub.id].merchant_name && plaidToken) {
+                            const requestBody = {
+                              access_token: plaidToken,
+                              transaction_ids: detailsCache[sub.id].transaction_ids
+                            };
+                            console.log('DEBUG Show Payment History: requestBody', requestBody);
+                            try {
+                              const res = await fetch('http://patcav.shop/api/account/get_transactions/', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify(requestBody)
+                              });
+                              if (res.ok) {
+                                const data = await res.json();
+                                setPaymentHistory(hist => ({ ...hist, [sub.id]: data.transactions }));
+                              } else {
+                                alert('Failed to fetch payment history.');
+                              }
+                            } catch (err) {
+                              alert('Network error while fetching payment history.');
+                            }
+                          } else {
+                            alert('Payment history is only available for Plaid-linked subscriptions.');
+                          }
+                        }}
+                      >
+                        Show Payment History
+                      </button>
+                    )}
+                    {/* Payment History Display */}
+                    {paymentHistory[sub.id] && Array.isArray(paymentHistory[sub.id]) && paymentHistory[sub.id].length > 0 && (
+                      <div style={{ marginTop: 16 }}>
+                        <b>Payment History:</b>
+                        <ul style={{ paddingLeft: 18 }}>
+                          {paymentHistory[sub.id].map(tx => (
+                            <li key={tx.transaction_id}>
+                              {tx.date}: ${tx.amount} - {tx.name || tx.merchant_name || 'Transaction'}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
           <div style={{ margin: '24px 0', display: 'flex', gap: '16px', alignItems: 'center' }}>
             <TotalPriceButton
               averages={averages}

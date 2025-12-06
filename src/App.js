@@ -127,7 +127,14 @@ function App() {
                   background: 'transparent',
                 }}>
                   <div style={{ marginBottom: 8 }}>
-                  <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); setPlaidToken(null); }}>Sign out</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'flex-end', width: '100%' }}>
+                    <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); setPlaidToken(null); }}>Sign out</button>
+                    {username && (
+                      <span style={{ fontWeight: 600, fontSize: 20, color: '#fff', background: '#1976d2', padding: '6px 18px', borderRadius: 8, boxShadow: '0 1px 4px #000' }}>
+                        Hello, {username}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <h1 className="heading-main" style={{ textAlign: 'left', fontSize: '2.5rem', marginBottom: 32, marginLeft: 0 }}>RateMate!</h1>
                 <div style={{ marginBottom: 24 }}>
