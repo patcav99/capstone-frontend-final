@@ -93,9 +93,13 @@ function BankLink({ setSubscriptions, onRecurringFetched, accessToken, setPlaidT
       ? { access_token: accessToken, username: username, mock: true }
       : { access_token: accessToken, username: username };
     console.log('DEBUG: Username included in recurring POST body:', username);
+    const headers = { 'Content-Type': 'application/json' };
+    if (window.jwtToken) {
+      headers['Authorization'] = `Bearer ${window.jwtToken}`;
+    }
     fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(postBody),
     })
       .then(res => res.json())

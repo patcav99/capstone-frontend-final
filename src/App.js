@@ -103,6 +103,7 @@ function App() {
                   setUsername(uname);
                   console.log('DEBUG: Username set in App.js:', uname);
                   localStorage.setItem('token', token);
+                  localStorage.setItem('username', uname);
                   setShowLogin(!isTokenValid(token));
                   // DO NOT setPlaidToken here; plaidToken is only set from Plaid API response
                   console.log("Login success, hiding login page");
@@ -116,27 +117,37 @@ function App() {
               <div className="App" style={{ marginTop: 40 }}>Error: {error}</div>
             ) : (
               <div className="App" style={{ marginTop: 40 }}>
-                <div style={{ marginBottom: 8 }}>
-                  <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); }}>Sign out</button>
+                <div style={{
+                  border: '4px solid #fff',
+                  borderRadius: '16px',
+                  boxSizing: 'border-box',
+                  padding: '24px',
+                  margin: '0 auto',
+                  maxWidth: '1200px',
+                  background: 'transparent',
+                }}>
+                  <div style={{ marginBottom: 8 }}>
+                  <button onClick={() => { localStorage.removeItem('token'); setJwtToken(null); setShowLogin(true); setUsername(""); setPlaidToken(null); }}>Sign out</button>
                 </div>
                 <h1 className="heading-main" style={{ textAlign: 'left', fontSize: '2.5rem', marginBottom: 32, marginLeft: 0 }}>RateMate!</h1>
                 <div style={{ marginBottom: 24 }}>
-                  <BankLink
+                    <BankLink
+                      setSubscriptions={setSubscriptions}
+                      onRecurringFetched={() => subListRef.current?.fetchAndCheckAverages()}
+                      accessToken={plaidToken}
+                      setPlaidToken={setPlaidToken}
+                      username={username}
+                    />
+                    {console.log('DEBUG: Username prop to BankLink:', username)}
+                  </div>
+                  <SubscriptionList
+                    ref={subListRef}
+                    subscriptions={subscriptions}
                     setSubscriptions={setSubscriptions}
-                    onRecurringFetched={() => subListRef.current?.fetchAndCheckAverages()}
-                    accessToken={plaidToken}
-                    setPlaidToken={setPlaidToken}
-                    username={username}
+                    jwtToken={jwtToken}
+                    plaidToken={plaidToken}
                   />
-                  {console.log('DEBUG: Username prop to BankLink:', username)}
                 </div>
-                <SubscriptionList
-                  ref={subListRef}
-                  subscriptions={subscriptions}
-                  setSubscriptions={setSubscriptions}
-                  jwtToken={jwtToken}
-                  plaidToken={plaidToken}
-                />
               </div>
             )
           }

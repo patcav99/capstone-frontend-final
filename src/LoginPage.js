@@ -164,7 +164,7 @@ export default function LoginPage({ onLogin, onUsernameChange, username }) {
       </form>
       {showForgotModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div style={{ background: '#fff', padding: 32, borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.15)', minWidth: 320 }}>
+          <div style={{ background: '#218c4a', color: '#fff', padding: 32, borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.15)', minWidth: 320 }}>
             <h3>Reset Password</h3>
             <form onSubmit={handleForgotSubmit}>
               <label style={{ display: 'block', marginBottom: 8 }}>Enter your email address:</label>

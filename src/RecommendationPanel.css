@@ -1,3 +1,7 @@
+.recommendation-name {
+  color: #2980b9;
+  font-weight: 600;
+}
 .recommendation-panel {
   position: relative;
   width: 320px;

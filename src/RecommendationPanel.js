@@ -22,22 +22,30 @@ const RecommendationPanel = ({ recommendations, loading, error, subscriptions })
       <h3>Recommendations</h3>
       <div>
         <strong>Keep:</strong> {current.keep && current.keep.length > 0
-          ? current.keep.map(id => idToName[id] || id).join(', ')
+          ? current.keep.map((id, idx) => (
+              <span key={id} className="recommendation-name" style={{ color: '#2980b9', fontWeight: 600 }}>
+                {idToName[id] || id}{idx < current.keep.length - 1 ? ', ' : ''}
+              </span>
+            ))
           : 'None'}
       </div>
       <div>
         <strong>Cancel:</strong> {current.cancel && current.cancel.length > 0
-          ? current.cancel.map(id => idToName[id] || id).join(', ')
+          ? current.cancel.map((id, idx) => (
+              <span key={id} className="recommendation-name" style={{ color: '#2980b9', fontWeight: 600 }}>
+                {idToName[id] || id}{idx < current.cancel.length - 1 ? ', ' : ''}
+              </span>
+            ))
           : 'None'}
       </div>
       <div>
-        <strong>Total Subscriptions:</strong> ${current.total_subscriptions}
+        <strong>Total Subscriptions:</strong> <span className="recommendation-name">${current.total_subscriptions}</span>
       </div>
       <div>
-        <strong>Other Transactions:</strong> ${current.other_transactions}
+        <strong>Other Transactions:</strong> <span className="recommendation-name">${current.other_transactions}</span>
       </div>
       <div>
-        <strong>All Spending:</strong> ${current.all_spending}
+        <strong>All Spending:</strong> <span className="recommendation-name">${current.all_spending}</span>
       </div>
     </div>
   );

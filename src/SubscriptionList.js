@@ -76,6 +76,7 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
   const [showTotal, setShowTotal] = useState(false);
   const [total, setTotal] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState({}); // { subId: [transactions] }
+  const [showHistory, setShowHistory] = useState({}); // { subId: boolean }
   const [recommendations, setRecommendations] = useState(null);
   const [recLoading, setRecLoading] = useState(false);
   const [recError, setRecError] = useState(null);
@@ -90,8 +91,9 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
         if (data && data.subscriptions) {
           const avgMap = {};
           const newNotifications = [];
-          // Only consider active subscriptions for notifications
-          const activeSubsOnly = data.subscriptions.filter(sub => sub.is_active === true);
+          // Only consider active subscriptions that are linked to the signed-in user for notifications
+          const userSubIds = new Set(subscriptions.map(sub => sub.id));
+          const activeSubsOnly = data.subscriptions.filter(sub => sub.is_active === true && userSubIds.has(sub.id));
           console.log('DEBUG subscriptions here:', data.subscriptions);
           console.log('DEBUG activeSubsOnly for notifications:', activeSubsOnly);
           activeSubsOnly.forEach(sub => {
@@ -295,12 +297,16 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
                     <button
                       style={{ marginTop: 12, padding: '6px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}
                       onClick={async () => {
-                        // Only send Plaid access token for Plaid-linked subscriptions
+                        setShowHistory(prev => ({ ...prev, [sub.id]: !prev[sub.id] }));
+                        // If toggling off, do not fetch again
+                        if (showHistory[sub.id]) return;
                         if ((detailsCache[sub.id].merchant_name || detailsCache[sub.id].name) && plaidToken) {
+                          const merchantName = detailsCache[sub.id].merchant_name || detailsCache[sub.id].name;
                           const requestBody = {
                             access_token: plaidToken,
-                            transaction_ids: detailsCache[sub.id].transaction_ids
+                            merchant_name: merchantName
                           };
+                          console.log('DEBUG Payment History merchant_name:', merchantName);
                           console.log('DEBUG Show Payment History: requestBody', requestBody);
                           try {
                             const res = await fetch('http://patcav.shop/api/account/get_transactions/', {
@@ -323,11 +329,11 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
                         }
                       }}
                     >
-                      Show Payment History
+                      {showHistory[sub.id] ? 'Hide Payment History' : 'Show Payment History'}
                     </button>
                   )}
                   {/* Payment History Display */}
-                  {paymentHistory[sub.id] && Array.isArray(paymentHistory[sub.id]) && paymentHistory[sub.id].length > 0 && (
+                  {showHistory[sub.id] && paymentHistory[sub.id] && Array.isArray(paymentHistory[sub.id]) && paymentHistory[sub.id].length > 0 && (
                     <div style={{ marginTop: 16 }}>
                       <b>Payment History:</b>
                       <ul style={{ paddingLeft: 18 }}>
@@ -574,7 +580,7 @@ const SubscriptionList = forwardRef(({ subscriptions, setSubscriptions, jwtToken
         onRequestClose={() => setShowRankModal(false)}
         contentLabel="Rank Subscriptions"
         ariaHideApp={false}
-        style={{ content: { maxWidth: 400, margin: 'auto', padding: 24, borderRadius: 8 } }}
+        style={{ content: { maxWidth: 400, margin: 'auto', padding: 24, borderRadius: 8, background: '#218c4a', color: '#fff' } }}
       >
         <h3>Rank Your Subscriptions</h3>
         <p>Enter a unique rank for each subscription (1 = highest usage):</p>
